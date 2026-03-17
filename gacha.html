@@ -7,144 +7,157 @@
   <link href="https://fonts.googleapis.com/css2?family=Kiwi+Maru:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    .shine {
-      position: relative;
-      overflow: hidden;
-    }
-    .shine::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -75%;
-      width: 50%;
-      height: 100%;
-      background: linear-gradient(120deg, transparent, rgba(255,255,255,0.8), transparent);
-      transform: skewX(-25deg);
-      animation: shine 1s ease;
-    }
-    @keyframes shine {
-      100% { left: 125%; }
-    }
-
-    .bounce-btn {
-      transition: transform 0.2s;
-    }
-    .bounce-btn:active {
-      transform: scale(1.1);
-    }
-
-    .card {
-      box-shadow: 0 10px 25px rgba(255, 182, 193, 0.6);
-      transition: transform 0.2s;
-    }
-    .card:hover {
-      transform: translateY(-3px);
-    }
+    .shine{position:relative;overflow:hidden}
+    .shine::after{content:'';position:absolute;top:0;left:-75%;width:50%;height:100%;background:linear-gradient(120deg,transparent,rgba(255,255,255,0.8),transparent);transform:skewX(-25deg);animation:shine 1s ease}
+    @keyframes shine{100%{left:125%}}
+    .bounce-btn{transition:transform .2s}
+    .bounce-btn:active{transform:scale(1.1)}
+    .card{box-shadow:0 10px 25px rgba(255,182,193,.6);transition:transform .2s}
+    .card:hover{transform:translateY(-3px)}
   </style>
 </head>
-<body class="bg-gradient-to-br from-pink-200 via-purple-200 to-pink-300" style="font-family: 'Kiwi Maru', sans-serif;">
-  <div id="app" class="min-h-screen flex flex-col items-center p-4"></div>
+<body class="bg-gradient-to-br from-pink-200 via-purple-200 to-pink-300" style="font-family:'Kiwi Maru',sans-serif;">
+<div id="app" class="min-h-screen flex flex-col items-center p-4"></div>
 
-  <script>
-    const app = document.getElementById("app");
+<script>
+const app=document.getElementById('app');
 
-    const initialState = () => ({
-      totalTypes: 10,
-      oshiList: [{ name: "推し1", count: 1 }],
-      drawCount: 10,
-      price: 500,
-      results: []
-    });
+const initialState=()=>({totalTypes:10,oshiList:[{name:'推し1',count:1}],drawCount:10,price:500,results:[],budget:0});
+let state={...initialState()};
 
-    let state = initialState();
+// ===== 履歴（localStorage） =====
+let history=loadHistory();
+function loadHistory(){
+  const data=localStorage.getItem('gachaHistory');
+  return data?JSON.parse(data):{results:[],totalCount:0,totalCost:0};
+}
+function saveHistory(){
+  localStorage.setItem('gachaHistory',JSON.stringify(history));
+}
 
-    function render() {
-      const { totalTypes, oshiList, drawCount, price, results } = state;
+function calcExpectedCount(){
+  const {totalTypes,oshiList,price,budget}=state;
+  const totalOshi=oshiList.reduce((s,o)=>s+o.count,0);
+  const probability=totalTypes>0?totalOshi/totalTypes:0;
+  const draws=price>0?budget/price:0;
+  return draws*probability;
+}
 
-      const totalOshi = oshiList.reduce((s, o) => s + o.count, 0);
-      const probability = totalTypes > 0 ? totalOshi / totalTypes : 0;
-      const expectedCost = probability > 0 ? (1 / probability) * price : 0;
-      const fullSetCost = oshiList.reduce((sum, o) => {
-        const p = o.count / totalTypes;
-        return p > 0 ? sum + (1 / p) : sum;
-      }, 0) * price;
+function render(){
+  const {totalTypes,oshiList,drawCount,price,results,budget}=state;
 
-      const totalCost = drawCount * price;
+  const totalOshi=oshiList.reduce((s,o)=>s+o.count,0);
+  const probability=totalTypes>0?totalOshi/totalTypes:0;
+  const expectedCost=probability>0?(1/probability)*price:0;
+  const fullSetCost=oshiList.reduce((sum,o)=>{const p=o.count/totalTypes;return p>0?sum+(1/p):sum},0)*price;
 
-      const summary = {};
-      results.forEach(r => summary[r] = (summary[r] || 0) + 1);
+  const totalCost=drawCount*price;
 
-      app.innerHTML = `
-        <h1 class="text-2xl font-bold mb-4 text-pink-700 text-center">💗 推し確率シミュレーター 💗</h1>
+  const summary={};
+  results.forEach(r=>summary[r]=(summary[r]||0)+1);
 
-        <div class="bg-white p-4 rounded-2xl card w-full max-w-md mb-4">
-          <div class="flex justify-between items-center mb-2">
-            <h2 class="font-bold">確率設定</h2>
-            <button onclick="resetAll()" class="text-sm bg-gray-200 px-2 py-1 rounded">リセット</button>
-          </div>
+  const historySummary={};
+  history.results.forEach(r=>historySummary[r]=(historySummary[r]||0)+1);
 
-          <label>全種類数</label>
-          <input type="number" value="${totalTypes}" onchange="updateTotal(this.value)" class="w-full mb-2 p-1 border rounded" />
+  app.innerHTML=`
+  <h1 class="text-2xl font-bold mb-4 text-pink-700 text-center">💗 推し確率シミュレーター 💗</h1>
 
-          <label>推し内訳</label>
-          ${oshiList.map((o, i) => `
-            <div class="flex gap-1 mb-1 items-center">
-              <input value="${o.name}" onchange="updateName(${i}, this.value)" class="flex-1 min-w-0 border rounded p-1" />
-              <input type="number" value="${o.count}" onchange="updateCount(${i}, this.value)" class="w-14 border rounded p-1" />
-              <button onclick="removeOshi(${i})" class="w-8 text-center">×</button>
-            </div>
-          `).join("")}
+  <div class="bg-white p-4 rounded-2xl card w-full max-w-md mb-4">
+    <div class="flex justify-between items-center mb-2">
+      <h2 class="font-bold">確率設定</h2>
+      <button onclick="resetSettings()" class="text-sm bg-gray-200 px-2 py-1 rounded">設定リセット</button>
+    </div>
 
-          <button onclick="addOshi()" class="mt-1 text-sm">＋追加</button>
+    <label>全種類数</label>
+    <input type="number" value="${totalTypes}" onchange="updateTotal(this.value)" class="w-full mb-2 p-1 border rounded" />
 
-          <label class="block mt-2">金額</label>
-          <input type="number" value="${price}" onchange="updatePrice(this.value)" class="w-full mb-2 border p-1 rounded" />
+    <label>推し内訳</label>
+    ${oshiList.map((o,i)=>`
+      <div class="flex gap-1 mb-1 items-center">
+        <input value="${o.name}" onchange="updateName(${i},this.value)" class="flex-1 min-w-0 border rounded p-1" />
+        <input type="number" value="${o.count}" onchange="updateCount(${i},this.value)" class="w-14 border rounded p-1" />
+        <button onclick="removeOshi(${i})" class="w-8 text-center">×</button>
+      </div>`).join('')}
 
-          <p>確率：約 ${(probability*100).toFixed(1)}%</p>
-          <p>排出最低額：約 ${Math.ceil(expectedCost)}円</p>
-          <p>全種コンプ：約 ${Math.ceil(fullSetCost)}円</p>
-        </div>
+    <button onclick="addOshi()" class="mt-1 text-sm">＋追加</button>
 
-        <input type="number" value="${drawCount}" onchange="updateDrawCount(this.value)" class="mb-2 border p-1 rounded w-24 text-center" />
-        <button onclick="draw()" class="bg-pink-500 text-white px-4 py-2 rounded mb-2 bounce-btn">ガチャ！</button>
+    <label class="block mt-2">金額</label>
+    <input type="number" value="${price}" onchange="updatePrice(this.value)" class="w-full mb-2 border p-1 rounded" />
 
-        <div class="mt-2 bg-white p-4 rounded-xl card w-full max-w-md">
-          <p>合計：${totalCost}円</p>
-          ${Object.entries(summary).map(([k,v])=>`<div>${k}:${v}</div>`).join("")}
+    <label class="block mt-2">予算（円）</label>
+    <input type="number" value="${budget}" onchange="updateBudget(this.value)" class="w-full mb-2 border p-1 rounded" />
 
-          <div class="grid grid-cols-2 gap-2 mt-2">
-            ${results.map(r=>{
-              const isOshi = oshiList.some(o=>o.name===r);
-              return `<div class="p-2 rounded text-center ${isOshi?'bg-pink-200 shine':'bg-gray-100'}">${r}</div>`;
-            }).join("")}
-          </div>
-        </div>
-      `;
-    }
+    <p class="text-pink-600 font-bold">期待推し個数：約 ${calcExpectedCount().toFixed(2)}個</p>
 
-    function updateTotal(v){ state.totalTypes=Number(v); render(); }
-    function updateName(i,v){ state.oshiList[i].name=v; render(); }
-    function updateCount(i,v){ state.oshiList[i].count=Number(v); render(); }
-    function updatePrice(v){ state.price=Number(v); render(); }
-    function updateDrawCount(v){ state.drawCount=Number(v); render(); }
+    <p>確率：約 ${(probability*100).toFixed(1)}%</p>
+    <p>排出最低額：約 ${Math.ceil(expectedCost)}円</p>
+    <p>全種コンプ：約 ${Math.ceil(fullSetCost)}円</p>
+  </div>
 
-    function addOshi(){ state.oshiList.push({name:`推し${state.oshiList.length+1}`,count:1}); render(); }
-    function removeOshi(i){ state.oshiList.splice(i,1); if(state.oshiList.length===0) state.oshiList=[{name:"推し1",count:1}]; render(); }
+  <input type="number" value="${drawCount}" onchange="updateDrawCount(this.value)" class="mb-2 border p-1 rounded w-24 text-center" />
+  <button onclick="draw()" class="bg-pink-500 text-white px-4 py-2 rounded mb-2 bounce-btn">ガチャ！</button>
 
-    function resetAll(){ state = initialState(); render(); }
+  <div class="mt-2 bg-white p-4 rounded-xl card w-full max-w-md">
+    <p class="font-bold">今回：${totalCost}円</p>
+    ${Object.entries(summary).map(([k,v])=>`<div>${k}:${v}</div>`).join('')}
 
-    function draw(){
-      state.results=[];
-      for(let i=0;i<state.drawCount;i++){
-        const pool=[];
-        state.oshiList.forEach(o=>{for(let j=0;j<o.count;j++) pool.push(o.name)});
-        for(let j=0;j<state.totalTypes - state.oshiList.reduce((s,o)=>s+o.count,0);j++) pool.push("その他");
-        state.results.push(pool[Math.floor(Math.random()*pool.length)]);
-      }
-      render();
-    }
+    <div class="grid grid-cols-2 gap-2 mt-2">
+      ${results.map(r=>{
+        const isOshi=oshiList.some(o=>o.name===r);
+        return `<div class="p-2 rounded text-center ${isOshi?'bg-pink-200 shine':'bg-gray-100'}">${r}</div>`;
+      }).join('')}
+    </div>
+  </div>
 
-    render();
-  </script>
+  <div class="mt-4 bg-white p-4 rounded-xl card w-full max-w-md">
+    <div class="flex justify-between items-center mb-2">
+      <h3 class="font-bold">累計履歴</h3>
+      <button onclick="resetHistory()" class="text-sm bg-gray-200 px-2 py-1 rounded">履歴リセット</button>
+    </div>
+
+    <p>総回数：${history.totalCount}回</p>
+    <p>総金額：${history.totalCost}円</p>
+
+    ${Object.entries(historySummary).map(([k,v])=>`<div>${k}:${v}</div>`).join('')}
+  </div>
+  `;
+}
+
+// ===== 更新系 =====
+function updateTotal(v){state.totalTypes=Number(v);render();}
+function updateName(i,v){state.oshiList[i].name=v;render();}
+function updateCount(i,v){state.oshiList[i].count=Number(v);render();}
+function updatePrice(v){state.price=Number(v);render();}
+function updateDrawCount(v){state.drawCount=Number(v);render();}
+function updateBudget(v){state.budget=Number(v);render();}
+
+function addOshi(){state.oshiList.push({name:`推し${state.oshiList.length+1}`,count:1});render();}
+function removeOshi(i){state.oshiList.splice(i,1);if(state.oshiList.length===0)state.oshiList=[{name:'推し1',count:1}];render();}
+
+// ===== リセット =====
+function resetSettings(){state={...initialState(),budget:0};render();}
+function resetHistory(){history={results:[],totalCount:0,totalCost:0};saveHistory();render();}
+
+// ===== ガチャ =====
+function draw(){
+  state.results=[];
+  for(let i=0;i<state.drawCount;i++){
+    const pool=[];
+    state.oshiList.forEach(o=>{for(let j=0;j<o.count;j++)pool.push(o.name)});
+    for(let j=0;j<state.totalTypes-state.oshiList.reduce((s,o)=>s+o.count,0);j++)pool.push('その他');
+    const result=pool[Math.floor(Math.random()*pool.length)];
+    state.results.push(result);
+
+    // 履歴追加
+    history.results.push(result);
+    history.totalCount++;
+    history.totalCost+=state.price;
+  }
+  saveHistory();
+  render();
+}
+
+render();
+</script>
 </body>
 </html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>推し確率シミュレーター</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kiwi+Maru:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-pink-200 via-purple-200 to-pink-300" style="font-family: 'Kiwi Maru', sans-serif;">
+  <div id="app" class="min-h-screen flex flex-col items-center p-6"></div>
+
+  <script>
+    const app = document.getElementById("app");
+
+    let totalTypes = 10;
+    let oshiList = [{ name: "推し1", count: 1 }];
+    let drawCount = 10;
+    let price = 500;
+    let results = [];
+
+    function render() {
+      const totalOshi = oshiList.reduce((s, o) => s + o.count, 0);
+      const probability = totalTypes > 0 ? totalOshi / totalTypes : 0;
+      const expectedCost = probability > 0 ? (1 / probability) * price : 0;
+      const fullSetCost = oshiList.reduce((sum, o) => {
+        const p = o.count / totalTypes;
+        return p > 0 ? sum + (1 / p) : sum;
+      }, 0) * price;
+
+      const totalCost = drawCount * price;
+
+      const summary = {};
+      results.forEach(r => summary[r] = (summary[r] || 0) + 1);
+
+      app.innerHTML = `
+        <h1 class="text-3xl font-bold mb-4 text-pink-700">💗 推し確率シミュレーター 💗</h1>
+
+        <div class="bg-white p-4 rounded-2xl shadow w-full max-w-md mb-4">
+          <h2 class="font-bold mb-2">確率設定</h2>
+
+          <label>全種類数</label>
+          <input type="number" value="${totalTypes}" onchange="updateTotal(this.value)" class="w-full mb-2 p-1 border rounded" />
+
+          <label>推し内訳</label>
+          ${oshiList.map((o, i) => `
+            <div class="flex gap-1 mb-1">
+              <input value="${o.name}" onchange="updateName(${i}, this.value)" class="flex-1 border rounded p-1" />
+              <input type="number" value="${o.count}" onchange="updateCount(${i}, this.value)" class="w-16 border rounded p-1" />
+              <button onclick="removeOshi(${i})">×</button>
+            </div>
+          `).join("")}
+
+          <button onclick="addOshi()">＋追加</button>
+
+          <label class="block mt-2">金額</label>
+          <input type="number" value="${price}" onchange="price=this.value;render()" class="w-full mb-2 border p-1 rounded" />
+
+          <p>確率：約 ${(probability*100).toFixed(1)}%</p>
+          <p>排出最低額：約 ${Math.ceil(expectedCost)}円</p>
+          <p>全種コンプ：約 ${Math.ceil(fullSetCost)}円</p>
+        </div>
+
+        <input type="number" value="${drawCount}" onchange="drawCount=this.value;render()" class="mb-2 border p-1 rounded" />
+        <button onclick="draw()" class="bg-pink-500 text-white px-4 py-2 rounded">ガチャ！</button>
+
+        <div class="mt-4 bg-white p-4 rounded-xl w-full max-w-md">
+          <p>合計：${totalCost}円</p>
+          ${Object.entries(summary).map(([k,v])=>`<div>${k}:${v}</div>`).join("")}
+
+          <div class="grid grid-cols-2 gap-2 mt-2">
+            ${results.map(r=>`<div class="p-2 rounded ${oshiList.some(o=>o.name===r)?'bg-pink-200':'bg-gray-100'}">${r}</div>`).join("")}
+          </div>
+        </div>
+      `;
+    }
+
+    function updateTotal(v){ totalTypes=Number(v); render(); }
+    function updateName(i,v){ oshiList[i].name=v; render(); }
+    function updateCount(i,v){ oshiList[i].count=Number(v); render(); }
+    function addOshi(){ oshiList.push({name:`推し${oshiList.length+1}`,count:1}); render(); }
+    function removeOshi(i){ oshiList.splice(i,1); if(oshiList.length===0) oshiList=[{name:"推し1",count:1}]; render(); }
+
+    function draw(){
+      results=[];
+      for(let i=0;i<drawCount;i++){
+        const pool=[];
+        oshiList.forEach(o=>{for(let j=0;j<o.count;j++) pool.push(o.name)});
+        for(let j=0;j<totalTypes - oshiList.reduce((s,o)=>s+o.count,0);j++) pool.push("その他");
+        results.push(pool[Math.floor(Math.random()*pool.length)]);
+      }
+      render();
+    }
+
+    render();
+  </script>
+</body>
+</html>

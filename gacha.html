@@ -6,9 +6,29 @@
   <title>推し確率シミュレーター</title>
   <link href="https://fonts.googleapis.com/css2?family=Kiwi+Maru:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .shine {
+      position: relative;
+      overflow: hidden;
+    }
+    .shine::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -75%;
+      width: 50%;
+      height: 100%;
+      background: linear-gradient(120deg, transparent, rgba(255,255,255,0.7), transparent);
+      transform: skewX(-25deg);
+      animation: shine 1s ease;
+    }
+    @keyframes shine {
+      100% { left: 125%; }
+    }
+  </style>
 </head>
 <body class="bg-gradient-to-br from-pink-200 via-purple-200 to-pink-300" style="font-family: 'Kiwi Maru', sans-serif;">
-  <div id="app" class="min-h-screen flex flex-col items-center p-6"></div>
+  <div id="app" class="min-h-screen flex flex-col items-center p-4"></div>
 
   <script>
     const app = document.getElementById("app");
@@ -34,7 +54,7 @@
       results.forEach(r => summary[r] = (summary[r] || 0) + 1);
 
       app.innerHTML = `
-        <h1 class="text-3xl font-bold mb-4 text-pink-700">💗 推し確率シミュレーター 💗</h1>
+        <h1 class="text-2xl font-bold mb-4 text-pink-700 text-center">💗 推し確率シミュレーター 💗</h1>
 
         <div class="bg-white p-4 rounded-2xl shadow w-full max-w-md mb-4">
           <h2 class="font-bold mb-2">確率設定</h2>
@@ -44,14 +64,14 @@
 
           <label>推し内訳</label>
           ${oshiList.map((o, i) => `
-            <div class="flex gap-1 mb-1">
-              <input value="${o.name}" onchange="updateName(${i}, this.value)" class="flex-1 border rounded p-1" />
-              <input type="number" value="${o.count}" onchange="updateCount(${i}, this.value)" class="w-16 border rounded p-1" />
-              <button onclick="removeOshi(${i})">×</button>
+            <div class="flex gap-1 mb-1 items-center">
+              <input value="${o.name}" onchange="updateName(${i}, this.value)" class="flex-1 min-w-0 border rounded p-1" />
+              <input type="number" value="${o.count}" onchange="updateCount(${i}, this.value)" class="w-14 border rounded p-1" />
+              <button onclick="removeOshi(${i})" class="w-8 text-center">×</button>
             </div>
           `).join("")}
 
-          <button onclick="addOshi()">＋追加</button>
+          <button onclick="addOshi()" class="mt-1 text-sm">＋追加</button>
 
           <label class="block mt-2">金額</label>
           <input type="number" value="${price}" onchange="price=this.value;render()" class="w-full mb-2 border p-1 rounded" />
@@ -61,15 +81,18 @@
           <p>全種コンプ：約 ${Math.ceil(fullSetCost)}円</p>
         </div>
 
-        <input type="number" value="${drawCount}" onchange="drawCount=this.value;render()" class="mb-2 border p-1 rounded" />
-        <button onclick="draw()" class="bg-pink-500 text-white px-4 py-2 rounded">ガチャ！</button>
+        <input type="number" value="${drawCount}" onchange="drawCount=this.value;render()" class="mb-2 border p-1 rounded w-24 text-center" />
+        <button onclick="draw()" class="bg-pink-500 text-white px-4 py-2 rounded mb-2">ガチャ！</button>
 
-        <div class="mt-4 bg-white p-4 rounded-xl w-full max-w-md">
+        <div class="mt-2 bg-white p-4 rounded-xl w-full max-w-md">
           <p>合計：${totalCost}円</p>
           ${Object.entries(summary).map(([k,v])=>`<div>${k}:${v}</div>`).join("")}
 
           <div class="grid grid-cols-2 gap-2 mt-2">
-            ${results.map(r=>`<div class="p-2 rounded ${oshiList.some(o=>o.name===r)?'bg-pink-200':'bg-gray-100'}">${r}</div>`).join("")}
+            ${results.map(r=>{
+              const isOshi = oshiList.some(o=>o.name===r);
+              return `<div class="p-2 rounded text-center ${isOshi?'bg-pink-200 shine':'bg-gray-100'}">${r}</div>`;
+            }).join("")}
           </div>
         </div>
       `;

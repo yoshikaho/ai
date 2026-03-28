@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loglia</title>
+<link href="https://fonts.googleapis.com/css2?family=Kaisei+Decol:wght@400;700&family=Nunito:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --sky: #e0f4ff;
+  --sky2: #c2e9fb;
+  --sky3: #a1d8f5;
+  --blue: #4fb3e8;
+  --blue2: #2196c4;
+  --blue3: #1565a0;
+  --accent: #ff85a1;
+  --accent2: #ffb347;
+  --surface: #ffffff;
+  --surface2: #f0f9ff;
+  --border: #c2e9fb;
+  --text: #1a3a4a;
+  --text-dim: #4a7a9b;
+  --text-muted: #8ab4cc;
+  --thinking-bg: #f5f0ff;
+  --thinking-border: #c9b8f0;
+  --thinking-text: #6040a0;
+  --translated-bg: #e8f8ff;
+  --translated-border: #90d0f0;
+  --shadow: rgba(30, 100, 160, 0.10);
+  --shadow2: rgba(30, 100, 160, 0.18);
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Nunito', 'Kaisei Decol', sans-serif;
+  background: linear-gradient(135deg, #e0f4ff 0%, #c2e9fb 40%, #ddf0ff 100%);
+  min-height: 100vh;
+  color: var(--text);
+}
+
+/* ========== BUBBLES BG ========== */
+.bg-bubbles {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
+}
+.bg-bubbles span {
+  position: absolute; border-radius: 50%;
+  background: rgba(255,255,255,0.18);
+  animation: floatUp linear infinite;
+}
+.bg-bubbles span:nth-child(1)  { width:60px;height:60px;left:10%;animation-duration:18s;animation-delay:0s; }
+.bg-bubbles span:nth-child(2)  { width:30px;height:30px;left:25%;animation-duration:12s;animation-delay:3s; }
+.bg-bubbles span:nth-child(3)  { width:80px;height:80px;left:40%;animation-duration:22s;animation-delay:1s; }
+.bg-bubbles span:nth-child(4)  { width:20px;height:20px;left:60%;animation-duration:10s;animation-delay:5s; }
+.bg-bubbles span:nth-child(5)  { width:50px;height:50px;left:75%;animation-duration:16s;animation-delay:2s; }
+.bg-bubbles span:nth-child(6)  { width:40px;height:40px;left:88%;animation-duration:14s;animation-delay:7s; }
+@keyframes floatUp {
+  0%   { transform: translateY(110vh) scale(0.8); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 0.6; }
+  100% { transform: translateY(-10vh) scale(1.1); opacity: 0; }
+}
+
+/* ========== PAGES ========== */
+.page { display: none; position: relative; z-index: 1; }
+.page.active { display: block; }
+
+/* ========== LOGIN PAGE ========== */
+#page-login {
+  min-height: 100vh;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+#page-login.active { display: flex; }
+
+.login-card {
+  background: rgba(255,255,255,0.82);
+  backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(255,255,255,0.7);
+  border-radius: 28px;
+  padding: 48px 44px 44px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 8px 40px var(--shadow2), 0 2px 8px var(--shadow);
+  text-align: center;
+  animation: cardIn 0.5s cubic-bezier(.22,.8,.36,1) both;
+}
+@keyframes cardIn {
+  from { opacity:0; transform: translateY(24px) scale(0.97); }
+  to   { opacity:1; transform: translateY(0) scale(1); }
+}
+
+.login-logo {
+  font-family: 'Kaisei Decol', serif;
+  font-size: 2.8rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--blue2), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 4px;
+  letter-spacing: 0.04em;
+}
+.login-sub {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 32px;
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 0.08em;
+}
+.login-label {
+  display: block;
+  text-align: left;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.login-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.95rem;
+  color: var(--text);
+  background: var(--surface2);
+  margin-bottom: 18px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+.login-input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(79,179,232,0.15);
+}
+.btn-primary {
+  width: 100%;
+  padding: 13px;
+  background: linear-gradient(135deg, var(--blue), var(--blue2));
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: 'Nunito', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 4px 16px rgba(33,150,196,0.3);
+  margin-top: 4px;
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(33,150,196,0.38); }
+.btn-primary:active { transform: translateY(0); }
+.login-toggle {
+  margin-top: 18px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.login-toggle a {
+  color: var(--blue2);
+  text-decoration: none;
+  font-weight: 700;
+  cursor: pointer;
+}
+.login-toggle a:hover { text-decoration: underline; }
+.login-error {
+  background: #fff0f3;
+  border: 1px solid #ffb3c1;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.83rem;
+  color: #c0304a;
+  margin-bottom: 16px;
+  display: none;
+}
+
+/* ========== HEADER ========== */
+.app-header {
+  background: rgba(255,255,255,0.75);
+  backdrop-filter: blur(12px);
+  border-bottom: 1.5px solid rgba(194,233,251,0.6);
+  padding: 0 28px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 12px var(--shadow);
+}
+.header-logo {
+  font-family: 'Kaisei Decol', serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--blue2), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 0.04em;
+}
+.header-right { display: flex; align-items: center; gap: 12px; }
+.btn-ghost {
+  padding: 7px 16px;
+  background: transparent;
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-ghost:hover { border-color: var(--blue); color: var(--blue2); background: var(--sky); }
+
+.btn-accent {
+  padding: 7px 18px;
+  background: linear-gradient(135deg, var(--blue), var(--blue2));
+  border: none;
+  border-radius: 20px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: white;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 0 2px 8px rgba(33,150,196,0.25);
+}
+.btn-accent:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(33,150,196,0.35); }
+
+/* ========== LIST PAGE ========== */
+#page-list { min-height: calc(100vh - 60px); padding: 36px 28px; max-width: 900px; margin: 0 auto; }
+
+.page-title {
+  font-family: 'Kaisei Decol', serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--blue3);
+  margin-bottom: 6px;
+}
+.page-subtitle {
+  font-size: 0.83rem;
+  color: var(--text-muted);
+  margin-bottom: 28px;
+  font-family: 'DM Mono', monospace;
+}
+
+.thread-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 18px;
+  margin-top: 8px;
+}
+
+.thread-card {
+  background: rgba(255,255,255,0.82);
+  backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(194,233,251,0.7);
+  border-radius: var(--radius);
+  padding: 20px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  box-shadow: 0 2px 12px var(--shadow);
+  animation: fadeIn 0.35s ease both;
+  position: relative;
+  overflow: hidden;
+}
+.thread-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--blue), var(--accent));
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+.thread-card:hover { transform: translateY(-4px); box-shadow: 0 8px 28px var(--shadow2); border-color: var(--blue); }
+
+.card-title {
+  font-size: 0.97rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+  line-height: 1.4;
+  word-break: break-word;
+}
+.card-date {
+  font-size: 0.73rem;
+  font-family: 'DM Mono', monospace;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+.card-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+.badge {
+  font-size: 0.68rem;
+  font-family: 'DM Mono', monospace;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-weight: 500;
+}
+.badge-md { background: var(--sky2); color: var(--blue2); border: 1px solid var(--blue); }
+.badge-json { background: #fff3e0; color: #b06000; border: 1px solid #ffb347; }
+
+.card-delete {
+  position: absolute;
+  top: 10px; right: 12px;
+  background: transparent;
+  border: none;
+  font-size: 1rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: all 0.15s;
+  opacity: 0;
+}
+.thread-card:hover .card-delete { opacity: 1; }
+.card-delete:hover { background: #fff0f3; color: var(--accent); }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--text-muted);
+}
+.empty-icon { font-size: 3.5rem; margin-bottom: 16px; opacity: 0.4; }
+.empty-state p { font-size: 0.93rem; line-height: 1.7; }
+
+/* ========== UPLOAD MODAL ========== */
+.modal-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(20, 60, 100, 0.35);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.active { display: flex; }
+
+.modal {
+  background: white;
+  border-radius: 24px;
+  padding: 36px 32px 32px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 12px 48px rgba(20,60,100,0.2);
+  animation: cardIn 0.3s cubic-bezier(.22,.8,.36,1) both;
+}
+.modal-title {
+  font-family: 'Kaisei Decol', serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--blue3);
+  margin-bottom: 4px;
+}
+.modal-sub {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+  font-family: 'DM Mono', monospace;
+}
+.form-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.form-input {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.92rem;
+  color: var(--text);
+  background: var(--surface2);
+  margin-bottom: 16px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.form-input:focus { border-color: var(--blue); }
+
+.drop-area {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-sm);
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 12px;
+  background: var(--surface2);
+}
+.drop-area:hover, .drop-area.drag-over { border-color: var(--blue); background: var(--sky); }
+.drop-area-icon { font-size: 1.8rem; margin-bottom: 6px; opacity: 0.5; }
+.drop-area p { font-size: 0.8rem; color: var(--text-muted); }
+.drop-area .file-name { font-size: 0.82rem; color: var(--blue2); font-weight: 700; margin-top: 4px; }
+
+.modal-actions { display: flex; gap: 10px; margin-top: 8px; }
+.btn-cancel {
+  flex: 1;
+  padding: 11px;
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-cancel:hover { border-color: var(--blue); color: var(--blue2); }
+.btn-save {
+  flex: 2;
+  padding: 11px;
+  background: linear-gradient(135deg, var(--blue), var(--blue2));
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: white;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 0 3px 12px rgba(33,150,196,0.25);
+}
+.btn-save:hover { transform: translateY(-1px); box-shadow: 0 5px 16px rgba(33,150,196,0.35); }
+.btn-save:disabled { opacity: 0.5; cursor: default; transform: none; }
+
+.upload-status {
+  font-size: 0.82rem;
+  text-align: center;
+  margin-top: 10px;
+  min-height: 20px;
+  color: var(--blue2);
+}
+
+/* ========== VIEWER PAGE ========== */
+#page-viewer { min-height: calc(100vh - 60px); }
+
+.viewer-header {
+  padding: 24px 28px 0;
+  max-width: 860px;
+  margin: 0 auto;
+}
+.viewer-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.83rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  cursor: pointer;
+  background: rgba(255,255,255,0.7);
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  padding: 6px 16px;
+  transition: all 0.15s;
+  margin-bottom: 16px;
+}
+.viewer-back:hover { border-color: var(--blue); color: var(--blue2); background: var(--sky); }
+.viewer-title {
+  font-family: 'Kaisei Decol', serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--blue3);
+  margin-bottom: 4px;
+}
+.viewer-date {
+  font-size: 0.75rem;
+  font-family: 'DM Mono', monospace;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+
+.viewer-toolbar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 12px 28px;
+  background: rgba(255,255,255,0.6);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(194,233,251,0.5);
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.tb-btn {
+  padding: 5px 14px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border-radius: 20px;
+  cursor: pointer;
+  border: 1.5px solid var(--border);
+  background: rgba(255,255,255,0.8);
+  color: var(--text-dim);
+  transition: all 0.15s;
+}
+.tb-btn:hover { border-color: var(--blue); color: var(--blue2); background: var(--sky); }
+
+.chat-area {
+  padding: 24px 28px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.turn { display: flex; flex-direction: column; gap: 6px; }
+
+.turn-label {
+  font-size: 0.68rem;
+  font-family: 'DM Mono', monospace;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 0 4px;
+}
+
+.bubble {
+  padding: 14px 18px;
+  border-radius: var(--radius-sm);
+  line-height: 1.85;
+  font-size: 0.91rem;
+  word-break: break-word;
+  box-shadow: 0 2px 8px var(--shadow);
+}
+.user-turn .bubble {
+  background: rgba(255,255,255,0.85);
+  border: 1.5px solid var(--sky3);
+  border-left: 3px solid var(--blue);
+}
+.ai-turn .bubble {
+  background: rgba(224,244,255,0.7);
+  border: 1.5px solid var(--sky2);
+  border-left: 3px solid var(--sky3);
+}
+
+/* Thinking blocks */
+.thinking-outer { margin-bottom: 2px; }
+.thinking-block {
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1.5px solid var(--thinking-border);
+  box-shadow: 0 1px 6px var(--shadow);
+}
+.thinking-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  background: var(--thinking-bg);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+.thinking-header:hover { background: #ede5f7; }
+.thinking-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--thinking-text);
+  flex: 1;
+  letter-spacing: 0.05em;
+}
+.toggle-icon {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  transition: transform 0.2s;
+}
+.thinking-header.open .toggle-icon { transform: rotate(180deg); }
+.char-count {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  background: rgba(255,255,255,0.7);
+  border: 1px solid var(--thinking-border);
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+.thinking-checkbox { accent-color: var(--blue2); cursor: pointer; }
+.thinking-body {
+  display: none;
+  padding: 14px 16px;
+  background: rgba(250,248,255,0.95);
+  border-top: 1px solid var(--thinking-border);
+}
+.thinking-body.open { display: block; }
+.thinking-text {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.78rem;
+  color: var(--thinking-text);
+  line-height: 1.85;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+/* Translation */
+.translated-area {
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: var(--translated-bg);
+  border: 1.5px solid var(--translated-border);
+  border-radius: 8px;
+}
+.translated-label {
+  font-size: 0.65rem;
+  font-family: 'DM Mono', monospace;
+  color: var(--blue2);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.translated-para {
+  font-size: 0.84rem;
+  color: #1a3a5a;
+  line-height: 1.85;
+  margin-bottom: 10px;
+  word-break: break-word;
+}
+.translated-para:last-child { margin-bottom: 0; }
+
+.translate-btn {
+  padding: 3px 10px;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.68rem;
+  border-radius: 4px;
+  border: 1px solid var(--thinking-border);
+  background: white;
+  color: var(--thinking-text);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.translate-btn:hover { background: var(--thinking-text); border-color: var(--thinking-text); color: white; }
+.translate-btn:disabled { opacity: 0.4; cursor: default; }
+
+/* Loading */
+.loading-dots { display: inline-flex; gap: 4px; align-items: center; }
+.loading-dots span {
+  width: 4px; height: 4px; border-radius: 50%;
+  background: var(--blue);
+  animation: dotPulse 1.2s ease-in-out infinite;
+}
+.loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dotPulse {
+  0%,80%,100% { transform: scale(0.7); opacity: 0.4; }
+  40% { transform: scale(1.1); opacity: 1; }
+}
+
+/* Summary bar */
+.summary-bar {
+  display: none;
+  padding: 8px 28px;
+  background: rgba(255,255,255,0.6);
+  border-top: 1px solid rgba(194,233,251,0.5);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 860px;
+  margin: 0 auto;
+}
+.progress-track {
+  flex: 1; height: 5px;
+  background: var(--border); border-radius: 4px; overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue), var(--accent));
+  border-radius: 4px;
+  transition: width 0.4s;
+  width: 0%;
+}
+
+/* Loading screen */
+.loading-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  font-family: 'DM Mono', monospace;
+}
+
+/* Scroll */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--sky3); border-radius: 4px; }
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 28px; right: 28px;
+  background: var(--blue3);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  z-index: 999;
+  box-shadow: 0 4px 20px rgba(20,60,100,0.25);
+  transform: translateY(60px);
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(.22,.8,.36,1);
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.error { background: #c0304a; }
+</style>
+</head>
+<body>
+
+<div class="bg-bubbles">
+  <span></span><span></span><span></span>
+  <span></span><span></span><span></span>
+</div>
+
+<!-- ===== LOGIN PAGE ===== -->
+<div id="page-login" class="page">
+  <div class="login-card">
+    <div class="login-logo">Loglia</div>
+    <div class="login-sub">your private AI log archive</div>
+    <div class="login-error" id="login-error"></div>
+    <div id="login-form-area">
+      <label class="login-label">メールアドレス</label>
+      <input class="login-input" id="login-email" type="email" placeholder="you@example.com" autocomplete="email">
+      <label class="login-label">パスワード</label>
+      <input class="login-input" id="login-password" type="password" placeholder="••••••••" autocomplete="current-password">
+      <button class="btn-primary" onclick="handleLogin()">ログイン</button>
+      <div class="login-toggle">アカウントがない？ <a onclick="showSignup()">新規登録はこちら</a></div>
+    </div>
+    <div id="signup-form-area" style="display:none;">
+      <label class="login-label">メールアドレス</label>
+      <input class="login-input" id="signup-email" type="email" placeholder="you@example.com" autocomplete="email">
+      <label class="login-label">パスワード</label>
+      <input class="login-input" id="signup-password" type="password" placeholder="8文字以上" autocomplete="new-password">
+      <button class="btn-primary" onclick="handleSignup()">アカウント作成</button>
+      <div class="login-toggle">すでにアカウントをお持ちの方 <a onclick="showLogin()">ログインはこちら</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== LIST PAGE ===== -->
+<div id="page-list" class="page" style="display:none;">
+  <div class="app-header">
+    <div class="header-logo">Loglia</div>
+    <div class="header-right">
+      <button class="btn-accent" onclick="openUploadModal()">+ アップロード</button>
+      <button class="btn-ghost" onclick="handleLogout()">ログアウト</button>
+    </div>
+  </div>
+  <div style="max-width:900px;margin:0 auto;padding:36px 28px;">
+    <div class="page-title">ログアーカイブ</div>
+    <div class="page-subtitle" id="list-subtitle">reading your logs...</div>
+    <div class="thread-grid" id="thread-grid"></div>
+  </div>
+</div>
+
+<!-- ===== VIEWER PAGE ===== -->
+<div id="page-viewer" class="page" style="display:none;">
+  <div class="app-header">
+    <div class="header-logo">Loglia</div>
+    <div class="header-right">
+      <button class="btn-accent" onclick="openUploadModal(currentThreadId)">上書きアップロード</button>
+      <button class="btn-ghost" onclick="handleLogout()">ログアウト</button>
+    </div>
+  </div>
+  <div class="viewer-header">
+    <div class="viewer-back" onclick="showListPage()">← 一覧に戻る</div>
+    <div class="viewer-title" id="viewer-title"></div>
+    <div class="viewer-date" id="viewer-date"></div>
+  </div>
+  <div class="viewer-toolbar" id="viewer-toolbar" style="display:none;">
+    <button class="tb-btn" onclick="expandAll()">すべて展開</button>
+    <button class="tb-btn" onclick="collapseAll()">すべて折りたたむ</button>
+    <button class="tb-btn" id="translate-checked-btn" style="display:none;" onclick="translateChecked()">選択を翻訳</button>
+    <span id="checked-count" style="font-size:0.75rem;color:var(--text-muted);font-family:'DM Mono',monospace;align-self:center;"></span>
+    <span id="translate-progress" style="display:none;font-size:0.75rem;color:var(--blue2);font-family:'DM Mono',monospace;align-self:center;"></span>
+  </div>
+  <div class="summary-bar" id="summary-bar" style="display:none;">
+    <span>翻訳: <b id="summary-done">0</b>/<b id="summary-total">0</b></span>
+    <div class="progress-track"><div class="progress-fill" id="summary-progress-bar"></div></div>
+    <span id="summary-pct">0%</span>
+  </div>
+  <div class="chat-area" id="chat-area"></div>
+</div>
+
+<!-- ===== UPLOAD MODAL ===== -->
+<div class="modal-overlay" id="upload-modal">
+  <div class="modal">
+    <div class="modal-title">ログをアップロード</div>
+    <div class="modal-sub">MD + JSON を登録します</div>
+    <label class="form-label">タイトル</label>
+    <input class="form-input" id="upload-title" type="text" placeholder="例: Gemini との会話 2025-06-01">
+    <label class="form-label">MDファイル（大本ファイル）</label>
+    <div class="drop-area" id="drop-md" onclick="document.getElementById('input-md').click()">
+      <div class="drop-area-icon">📄</div>
+      <p>クリックまたはドロップ</p>
+      <div class="file-name" id="md-fname"></div>
+    </div>
+    <input type="file" id="input-md" accept=".md,.txt" style="display:none;">
+    <label class="form-label">JSONファイル（翻訳ファイル・任意）</label>
+    <div class="drop-area" id="drop-json" onclick="document.getElementById('input-json').click()">
+      <div class="drop-area-icon">🗒️</div>
+      <p>クリックまたはドロップ</p>
+      <div class="file-name" id="json-fname"></div>
+    </div>
+    <input type="file" id="input-json" accept=".json" style="display:none;">
+    <div class="upload-status" id="upload-status"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeUploadModal()">キャンセル</button>
+      <button class="btn-save" id="btn-save-upload" onclick="saveUpload()">保存する</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ========== SUPABASE SETUP ==========
+const SUPABASE_URL = 'https://ovmjpqnbgegykcksjgtp.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im92bWpwcW5iZ2VneWtja3NqZ3RwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2ODQ3OTcsImV4cCI6MjA5MDI2MDc5N30.br-EMnKb1ZH8-JrqkKUFgOE4CQ3Y-_Hxp0o4M0EIGVA';
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ========== STATE ==========
+let currentUser = null;
+let currentThreadId = null;
+let blockCount = 0;
+let uploadingForThreadId = null; // null=新規, id=上書き
+
+// ========== INIT ==========
+async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    currentUser = session.user;
+    showListPage();
+  } else {
+    showPage('page-login');
+  }
+  sb.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_IN') {
+      currentUser = session.user;
+      showListPage();
+    } else if (event === 'SIGNED_OUT') {
+      currentUser = null;
+      showPage('page-login');
+    }
+  });
+}
+
+// ========== PAGE ROUTING ==========
+function showPage(id) {
+  ['page-login','page-list','page-viewer'].forEach(p => {
+    const el = document.getElementById(p);
+    el.style.display = 'none';
+    el.classList.remove('active');
+  });
+  const target = document.getElementById(id);
+  target.style.display = (id === 'page-login') ? 'flex' : 'block';
+  target.classList.add('active');
+}
+
+async function showListPage() {
+  showPage('page-list');
+  await loadThreadList();
+}
+
+// ========== AUTH ==========
+function showSignup() {
+  document.getElementById('login-form-area').style.display = 'none';
+  document.getElementById('signup-form-area').style.display = 'block';
+  clearLoginError();
+}
+function showLogin() {
+  document.getElementById('signup-form-area').style.display = 'none';
+  document.getElementById('login-form-area').style.display = 'block';
+  clearLoginError();
+}
+function showLoginError(msg) {
+  const el = document.getElementById('login-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function clearLoginError() {
+  const el = document.getElementById('login-error');
+  el.textContent = '';
+  el.style.display = 'none';
+}
+async function handleLogin() {
+  clearLoginError();
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  if (!email || !password) { showLoginError('メールアドレスとパスワードを入力してください'); return; }
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) showLoginError('ログインに失敗しました: ' + error.message);
+}
+async function handleSignup() {
+  clearLoginError();
+  const email = document.getElementById('signup-email').value.trim();
+  const password = document.getElementById('signup-password').value;
+  if (!email || !password) { showLoginError('メールアドレスとパスワードを入力してください'); return; }
+  if (password.length < 8) { showLoginError('パスワードは8文字以上にしてください'); return; }
+  const { error } = await sb.auth.signUp({ email, password });
+  if (error) showLoginError('登録に失敗しました: ' + error.message);
+  else showLoginError('登録完了！同じ情報でログインしてください。');
+}
+async function handleLogout() {
+  await sb.auth.signOut();
+}
+
+// ========== THREAD LIST ==========
+async function loadThreadList() {
+  const grid = document.getElementById('thread-grid');
+  const subtitle = document.getElementById('list-subtitle');
+  grid.innerHTML = '';
+  subtitle.textContent = 'loading...';
+  const { data, error } = await sb.from('threads')
+    .select('id, title, uploaded_at, md_content, translation_json')
+    .order('uploaded_at', { ascending: false });
+  if (error) { showToast('データの読み込みに失敗しました', true); return; }
+  if (!data || data.length === 0) {
+    subtitle.textContent = '0 logs';
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <div class="empty-icon">📭</div>
+      <p>まだログがありません。<br>「+ アップロード」からログを追加してみてください。</p>
+    </div>`;
+    return;
+  }
+  subtitle.textContent = `${data.length} logs`;
+  data.forEach((thread, i) => {
+    const card = document.createElement('div');
+    card.className = 'thread-card';
+    card.style.animationDelay = (i * 0.05) + 's';
+    const date = new Date(thread.uploaded_at || thread.created_at);
+    const dateStr = date.toLocaleDateString('ja-JP', { year:'numeric', month:'2-digit', day:'2-digit' });
+    const hasMd = !!thread.md_content;
+    const hasJson = !!thread.translation_json;
+    card.innerHTML = `
+      <button class="card-delete" onclick="deleteThread(event,'${thread.id}')">✕</button>
+      <div class="card-title">${escHtml(thread.title || '無題')}</div>
+      <div class="card-date">${dateStr}</div>
+      <div class="card-badges">
+        ${hasMd ? '<span class="badge badge-md">MD</span>' : ''}
+        ${hasJson ? '<span class="badge badge-json">翻訳JSON</span>' : ''}
+      </div>`;
+    card.addEventListener('click', (e) => {
+      if (e.target.classList.contains('card-delete')) return;
+      openThread(thread);
+    });
+    grid.appendChild(card);
+  });
+}
+
+async function deleteThread(e, id) {
+  e.stopPropagation();
+  if (!confirm('このログを削除しますか？')) return;
+  const { error } = await sb.from('threads').delete().eq('id', id);
+  if (error) showToast('削除に失敗しました', true);
+  else { showToast('削除しました'); await loadThreadList(); }
+}
+
+// ========== UPLOAD MODAL ==========
+let mdFile = null, jsonFile = null;
+
+function openUploadModal(threadId = null) {
+  uploadingForThreadId = threadId || null;
+  mdFile = null; jsonFile = null;
+  document.getElementById('upload-title').value = '';
+  document.getElementById('md-fname').textContent = '';
+  document.getElementById('json-fname').textContent = '';
+  document.getElementById('upload-status').textContent = '';
+  document.getElementById('input-md').value = '';
+  document.getElementById('input-json').value = '';
+  if (threadId) {
+    document.getElementById('upload-title').value = document.getElementById('viewer-title').textContent;
+  }
+  document.getElementById('upload-modal').classList.add('active');
+}
+function closeUploadModal() {
+  document.getElementById('upload-modal').classList.remove('active');
+  uploadingForThreadId = null;
+}
+
+document.getElementById('input-md').addEventListener('change', e => {
+  mdFile = e.target.files[0];
+  document.getElementById('md-fname').textContent = mdFile ? mdFile.name : '';
+});
+document.getElementById('input-json').addEventListener('change', e => {
+  jsonFile = e.target.files[0];
+  document.getElementById('json-fname').textContent = jsonFile ? jsonFile.name : '';
+});
+
+// Drag & drop
+['drop-md','drop-json'].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener('dragover', e => { e.preventDefault(); el.classList.add('drag-over'); });
+  el.addEventListener('dragleave', () => el.classList.remove('drag-over'));
+  el.addEventListener('drop', e => {
+    e.preventDefault(); el.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+    if (id === 'drop-md') { mdFile = file; document.getElementById('md-fname').textContent = file.name; }
+    else { jsonFile = file; document.getElementById('json-fname').textContent = file.name; }
+  });
+});
+
+async function saveUpload() {
+  const title = document.getElementById('upload-title').value.trim();
+  const status = document.getElementById('upload-status');
+  const btn = document.getElementById('btn-save-upload');
+  if (!title) { status.textContent = 'タイトルを入力してください'; return; }
+  if (!mdFile && !uploadingForThreadId) { status.textContent = 'MDファイルを選択してください'; return; }
+  btn.disabled = true;
+  status.textContent = '保存中...';
+  let mdContent = null, jsonContent = null;
+  try {
+    if (mdFile) mdContent = await readFileText(mdFile);
+    if (jsonFile) jsonContent = await readFileText(jsonFile);
+  } catch(e) { status.textContent = 'ファイル読み込みに失敗しました'; btn.disabled = false; return; }
+  const payload = {
+    title,
+    uploaded_at: new Date().toISOString(),
+    user_id: currentUser.id,
+  };
+  if (mdContent !== null) payload.md_content = mdContent;
+  if (jsonContent !== null) payload.translation_json = jsonContent;
+  let error;
+  if (uploadingForThreadId) {
+    ({ error } = await sb.from('threads').update(payload).eq('id', uploadingForThreadId));
+  } else {
+    ({ error } = await sb.from('threads').insert(payload));
+  }
+  btn.disabled = false;
+  if (error) { status.textContent = '保存に失敗しました: ' + error.message; return; }
+  closeUploadModal();
+  showToast(uploadingForThreadId ? '上書き保存しました！' : '保存しました！');
+  if (uploadingForThreadId) {
+    // ビューワー再読込
+    const { data } = await sb.from('threads').select('*').eq('id', uploadingForThreadId).single();
+    if (data) openThread(data);
+  } else {
+    await loadThreadList();
+  }
+}
+
+function readFileText(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = e => res(e.target.result);
+    r.onerror = () => rej(new Error('読み込み失敗'));
+    r.readAsText(file, 'UTF-8');
+  });
+}
+
+// ========== VIEWER ==========
+function openThread(thread) {
+  currentThreadId = thread.id;
+  showPage('page-viewer');
+  document.getElementById('viewer-title').textContent = thread.title || '無題';
+  const date = new Date(thread.uploaded_at || thread.created_at);
+  document.getElementById('viewer-date').textContent = date.toLocaleDateString('ja-JP', { year:'numeric', month:'long', day:'numeric' });
+  renderChat(thread.md_content || '', thread.translation_json || null);
+}
+
+function renderChat(mdText, translationJsonStr) {
+  const chatArea = document.getElementById('chat-area');
+  chatArea.innerHTML = '';
+  blockCount = 0;
+  let translations = {};
+  if (translationJsonStr) {
+    try { translations = JSON.parse(translationJsonStr); } catch(e) {}
+  }
+  const turns = parseMD(mdText);
+  turns.forEach(turn => {
+    const div = document.createElement('div');
+    div.className = 'turn ' + (turn.role === 'user' ? 'user-turn' : 'ai-turn');
+    const label = document.createElement('div');
+    label.className = 'turn-label';
+    label.textContent = turn.role === 'user' ? 'You' : 'AI';
+    div.appendChild(label);
+    if (turn.thinking) {
+      const blockId = 'tb-' + blockCount++;
+      const savedTranslation = translations[blockId] || null;
+      div.appendChild(buildThinkingBlock(blockId, turn.thinking, savedTranslation));
+    }
+    if (turn.content) {
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.innerHTML = formatText(turn.content);
+      div.appendChild(bubble);
+    }
+    chatArea.appendChild(div);
+  });
+  const total = blockCount;
+  if (total > 0) {
+    document.getElementById('viewer-toolbar').style.display = 'flex';
+    document.getElementById('summary-bar').style.display = 'flex';
+    updateSummary();
+  }
+}
+
+function buildThinkingBlock(id, text, savedTranslation) {
+  const outer = document.createElement('div');
+  outer.className = 'thinking-outer';
+  outer.id = id;
+  const charCount = text.length;
+  const hasTranslation = savedTranslation && savedTranslation.length > 0;
+  outer.innerHTML = `
+    <div class="thinking-block">
+      <div class="thinking-header" onclick="toggleThinking('${id}')">
+        <input type="checkbox" class="thinking-checkbox" id="${id}-chk" onclick="event.stopPropagation();updateCheckedCount()">
+        <span class="thinking-label">thinking</span>
+        <span class="char-count">${charCount.toLocaleString()} chars</span>
+        ${!hasTranslation ? `<button class="translate-btn" id="${id}-tbtn" onclick="event.stopPropagation();translateBlock('${id}')">翻訳</button>` : `<button class="translate-btn" id="${id}-tbtn" onclick="event.stopPropagation();toggleTranslation('${id}')">翻訳を隠す</button>`}
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="thinking-body" id="${id}-body">
+        <div class="thinking-text" id="${id}-text">${escHtml(text)}</div>
+        <div class="translated-area" id="${id}-translated" style="display:${hasTranslation ? 'block' : 'none'};">
+          ${hasTranslation ? renderTranslatedHTML(savedTranslation) : ''}
+        </div>
+      </div>
+    </div>`;
+  return outer;
+}
+
+function renderTranslatedHTML(paras) {
+  return `<div class="translated-label">日本語訳</div>` +
+    paras.map(p => `<div class="translated-para">${p}</div>`).join('');
+}
+
+function toggleThinking(id) {
+  const body = document.getElementById(id + '-body');
+  const header = document.querySelector('#' + id + ' .thinking-header');
+  body.classList.toggle('open');
+  header.classList.toggle('open');
+}
+
+function toggleTranslation(id) {
+  const el = document.getElementById(id + '-translated');
+  const btn = document.getElementById(id + '-tbtn');
+  if (el.style.display === 'none') {
+    el.style.display = 'block';
+    btn.textContent = '翻訳を隠す';
+  } else {
+    el.style.display = 'none';
+    btn.textContent = '翻訳を表示';
+  }
+}
+
+// ========== MD PARSER ==========
+function parseMD(text) {
+  const turns = [];
+  // Gemini MD format: ## User / ## AI (or similar headers)
+  // Try to detect format
+  const lines = text.split('\n');
+  let currentRole = null;
+  let currentThinking = null;
+  let currentContent = [];
+  let inThinking = false;
+  let thinkingLines = [];
+  const flushTurn = () => {
+    if (currentRole) {
+      turns.push({
+        role: currentRole,
+        thinking: currentThinking,
+        content: currentContent.join('\n').trim()
+      });
+    }
+  };
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    // Detect role headers
+    if (/^##\s*(user|human|あなた|ユーザー)/i.test(line)) {
+      flushTurn(); currentRole = 'user'; currentThinking = null; currentContent = []; inThinking = false; continue;
+    }
+    if (/^##\s*(ai|assistant|gemini|claude|model|bot)/i.test(line)) {
+      flushTurn(); currentRole = 'ai'; currentThinking = null; currentContent = []; inThinking = false; continue;
+    }
+    // Thinking block detection (```thinking or <thinking>)
+    if (!inThinking && /^```thinking/i.test(line)) { inThinking = true; thinkingLines = []; continue; }
+    if (inThinking && /^```$/.test(line)) {
+      inThinking = false; currentThinking = thinkingLines.join('\n'); continue;
+    }
+    if (!inThinking && /^<thinking>/i.test(line)) { inThinking = true; thinkingLines = []; continue; }
+    if (inThinking && /^<\/thinking>/i.test(line)) {
+      inThinking = false; currentThinking = thinkingLines.join('\n'); continue;
+    }
+    if (inThinking) { thinkingLines.push(line); continue; }
+    if (currentRole) currentContent.push(line);
+  }
+  flushTurn();
+  // If no turns found, treat whole text as single AI message
+  if (turns.length === 0 && text.trim()) {
+    turns.push({ role: 'ai', thinking: null, content: text.trim() });
+  }
+  return turns;
+}
+
+function formatText(text) {
+  return escHtml(text)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/`(.+?)`/g, '<code style="background:rgba(100,180,230,0.15);padding:1px 5px;border-radius:3px;font-family:\'DM Mono\',monospace;font-size:0.88em;">$1</code>')
+    .replace(/\n/g, '<br>');
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ========== TOOLBAR ==========
+function expandAll() {
+  for (let i = 0; i < blockCount; i++) {
+    const body = document.getElementById('tb-' + i + '-body');
+    const header = document.querySelector('#tb-' + i + ' .thinking-header');
+    if (body) { body.classList.add('open'); header.classList.add('open'); }
+  }
+}
+function collapseAll() {
+  for (let i = 0; i < blockCount; i++) {
+    const body = document.getElementById('tb-' + i + '-body');
+    const header = document.querySelector('#tb-' + i + ' .thinking-header');
+    if (body) { body.classList.remove('open'); header.classList.remove('open'); }
+  }
+}
+function updateCheckedCount() {
+  const checked = [...document.querySelectorAll('.thinking-checkbox')].filter(c => c.checked);
+  const countEl = document.getElementById('checked-count');
+  const btn = document.getElementById('translate-checked-btn');
+  if (checked.length > 0) {
+    countEl.textContent = `${checked.length}件選択中`;
+    btn.style.display = '';
+  } else {
+    countEl.textContent = '';
+    btn.style.display = 'none';
+  }
+}
+
+// ========== TRANSLATION ==========
+async function translateBlock(id) {
+  const textEl = document.getElementById(id + '-text');
+  const translatedEl = document.getElementById(id + '-translated');
+  const btn = document.getElementById(id + '-tbtn');
+  if (!textEl || !translatedEl) return true;
+  if (translatedEl.style.display !== 'none') {
+    translatedEl.style.display = 'none';
+    btn.textContent = '翻訳を表示';
+    return true;
+  }
+  const body = document.getElementById(id + '-body');
+  const header = document.querySelector('#' + id + ' .thinking-header');
+  if (!body.classList.contains('open')) { body.classList.add('open'); header.classList.add('open'); }
+  let original = textEl.innerText;
+  if (!/\n\n/.test(original)) original = original.replace(/\n/g, '\n\n');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading-dots"><span></span><span></span><span></span></span>';
+  translatedEl.style.display = 'block';
+  translatedEl.innerHTML = '<div class="translated-label">翻訳中...</div>';
+  try {
+    const paragraphs = original.split(/\n\n+/).map(p => p.trim()).filter(p => p);
+    const translated = [];
+    for (const para of paragraphs) {
+      const result = await translateText(para);
+      translated.push(result);
+      await new Promise(r => setTimeout(r, 150));
+    }
+    translatedEl.innerHTML = renderTranslatedHTML(translated);
+    btn.textContent = '翻訳を隠す';
+    btn.disabled = false;
+    updateSummary();
+    return true;
+  } catch(e) {
+    translatedEl.innerHTML = '<div class="translated-label" style="color:#c0304a">翻訳に失敗しました</div>';
+    btn.textContent = '翻訳';
+    btn.disabled = false;
+    updateSummary();
+    return false;
+  }
+}
+
+async function translateChecked() {
+  const targets = [];
+  for (let i = 0; i < blockCount; i++) {
+    const id = 'tb-' + i;
+    const chk = document.getElementById(id + '-chk');
+    if (!chk || !chk.checked) continue;
+    const el = document.getElementById(id + '-translated');
+    if (el && el.style.display === 'none') targets.push(id);
+  }
+  if (!targets.length) return;
+  const btn = document.getElementById('translate-checked-btn');
+  const progress = document.getElementById('translate-progress');
+  btn.disabled = true;
+  progress.style.display = '';
+  let success = 0;
+  for (let i = 0; i < targets.length; i++) {
+    progress.textContent = `翻訳中 ${i+1}/${targets.length}`;
+    const ok = await translateBlock(targets[i]);
+    if (ok) { success++; const chk = document.getElementById(targets[i] + '-chk'); if (chk) chk.checked = false; }
+    await new Promise(r => setTimeout(r, 400));
+  }
+  updateCheckedCount();
+  progress.textContent = `完了！ ${success}件翻訳しました`;
+  setTimeout(() => { progress.style.display = 'none'; }, 3000);
+  btn.disabled = false;
+}
+
+async function translateText(text) {
+  const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|ja`;
+  const res = await fetch(url);
+  const data = await res.json();
+  if (data.responseStatus === 200) return data.responseData.translatedText;
+  throw new Error('translation failed');
+}
+
+function updateSummary() {
+  let done = 0, pending = 0;
+  for (let i = 0; i < blockCount; i++) {
+    const el = document.getElementById('tb-' + i + '-translated');
+    if (!el) continue;
+    if (el.style.display === 'none') pending++;
+    else done++;
+  }
+  const total = done + pending;
+  document.getElementById('summary-done').textContent = done;
+  document.getElementById('summary-total').textContent = total;
+  const pct = total === 0 ? 0 : Math.round(done / total * 100);
+  document.getElementById('summary-progress-bar').style.width = pct + '%';
+  document.getElementById('summary-pct').textContent = pct + '%';
+}
+
+// ========== TOAST ==========
+function showToast(msg, isError = false) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = 'toast' + (isError ? ' error' : '');
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// ========== START ==========
+init();
+</script>
+</body>
+</html>
